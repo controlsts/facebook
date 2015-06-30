@@ -1,3 +1,31 @@
-#list_control {
-  width: 300px;
+
+body {
+  * {
+    box-sizing: border-box;
+  }
+
+  .-f {
+    //border: 1px dashed blue;
+  }
+
+  .-afd-leaf {
+    //border: 1px solid red;
+  }
+
+  .-group.-view {
+    width: 560px;
+    height: 400px;
+
+    .-list-item {
+      width: 560px;
+      height: 140px;
+      font-size: 20px;
+      color: black;
+      opacity: .5;
+      &.-afd-leaf {
+        //border: 1px solid red;
+        opacity: 1;
+      }
+    }
+  }
 }

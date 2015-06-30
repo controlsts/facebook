@@ -5,6 +5,7 @@
     <title>Facebook</title>
     <script src="bower_components/controls.ts/controls.js"></script>
     <script src="bower_components/oauth-js/dist/oauth.js"></script>
+    <link rel="stylesheet" type="text/css" href="index.css" />
 </head>
 <body>
 <script>
@@ -67,7 +68,7 @@
         FB.login(
                 function(response) {
                     console.log(response);
-                    gApp.start();
+                    gApp.fbReady();
                 },
                 {
                     scope: 'user_likes',

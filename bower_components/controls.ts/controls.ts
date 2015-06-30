@@ -221,6 +221,7 @@ module Controls {
     export interface TPrevFocusInfo {
         rect: TRect;
         activeFocus: boolean;
+        prevFocusedEl: HTMLElement;
     }
 
     export interface FKeyMapBuilder {
@@ -252,24 +253,24 @@ module Controls {
         }
         aFocusable[startIndex].classList.add(KClassFocused);
         aKeyMap.setActiveFocus(startIndex);
-        /*
-         if (this._parent) {
-         if (!this._parent.isFocused()) {
-         return;
-         }
-         }
-         var scrollingScheme = this._getDrawParam(KParamStrScrollSchemeVertical);
-         if (aPrevKeyStr) {
-         if (scrollingScheme === TParamScrollScheme.EByFocusRemains) {
-         if (aPrevFocused) {
-         aPrevFocused.classList.remove(KClassActiveFocusedLeaf);
-         aFocusable[startIndex].classList.add(KClassActiveFocusedLeaf);
-         }
-         } else {
-         aKeyMap.doKey(aPrevKeyStr);
-         }
-         }
-         */
+
+        // next focusing
+        if (this._parent) {
+            if (!this._parent.isFocused()) {
+                return;
+            }
+        }
+        var scrollingScheme = this._getDrawParam(KParamStrScrollSchemeVertical);
+        if (aPrevKeyStr) {
+            if (scrollingScheme === TParamScrollScheme.EByFocusRemains) {
+                if (aPrevFocusInfo) {
+                    aPrevFocusInfo.prevFocusedEl.classList.remove(KClassActiveFocusedLeaf);
+                    aFocusable[startIndex].classList.add(KClassActiveFocusedLeaf);
+                }
+            } else {
+                aKeyMap.doKey(aPrevKeyStr);
+            }
+        }
     };
 
     export var KBuilderLeftRight: FKeyMapBuilder = function (
@@ -297,24 +298,24 @@ module Controls {
         }
         aFocusable[startIndex].classList.add(KClassFocused);
         aKeyMap.setActiveFocus(startIndex);
-        /*
-         if (this._parent) {
-         if (!this._parent.isFocused()) {
-         return;
-         }
-         }
-         var scrollingScheme = this._getDrawParam(KParamStrScrollSchemeVertical);
-         if (aPrevKeyStr) {
-         if (scrollingScheme === TParamScrollScheme.EByFocusRemains) {
-         if (aPrevFocused) {
-         aPrevFocused.classList.remove(KClassActiveFocusedLeaf);
-         aFocusable[startIndex].classList.add(KClassActiveFocusedLeaf);
-         }
-         } else {
-         aKeyMap.doKey(aPrevKeyStr);
-         }
-         }
-         */
+
+        // next focusing
+        if (this._parent) {
+            if (!this._parent.isFocused()) {
+                return;
+            }
+        }
+        var scrollingScheme = this._getDrawParam(KParamStrScrollSchemeVertical);
+        if (aPrevKeyStr) {
+            if (scrollingScheme === TParamScrollScheme.EByFocusRemains) {
+                if (aPrevFocusInfo) {
+                    aPrevFocusInfo.prevFocusedEl.classList.remove(KClassActiveFocusedLeaf);
+                    aFocusable[startIndex].classList.add(KClassActiveFocusedLeaf);
+                }
+            } else {
+                aKeyMap.doKey(aPrevKeyStr);
+            }
+        }
     };
 
     export var KBuilderGrid: FKeyMapBuilder = function (
@@ -966,13 +967,13 @@ module Controls {
             this._setDrawParam(KParamStrItemHeight, aItemHeight, false);
         }
         getItemHeight(): number {
-            return this._getDrawParam(KParamStrItemHeight) || false;
+            return this._getDrawParam(KParamStrItemHeight) || 0;
         }
         setItemWidth(aItemWidth: number) {
             this._setDrawParam(KParamStrItemWidth, aItemWidth, false);
         }
         getItemWidth(): number {
-            return this._getDrawParam(KParamStrItemWidth) || false;
+            return this._getDrawParam(KParamStrItemWidth) || 0;
         }
         setMaxColCount(aMaxColCount: number) {
             this._setDrawParam(KParamStrMaxColCount, aMaxColCount, false);
@@ -1177,7 +1178,8 @@ module Controls {
                 var prevFocusedEl: HTMLElement = this._keyMap.getFocusedElement();
                 this._prevFocusInfo = {
                     rect: Util.getRect(prevFocusedEl),
-                    activeFocus: prevFocusedEl.classList.contains(KClassActiveFocusedLeaf)
+                    activeFocus: prevFocusedEl.classList.contains(KClassActiveFocusedLeaf),
+                    prevFocusedEl: prevFocusedEl
                 };
             }
         }
@@ -1252,7 +1254,7 @@ module Controls {
             return handled;
         }
 
-        _doKeyEnterLatent() {
+        protected _doKeyEnterLatent() {
             if (this._keyMap) {
                 this._emitItemSelected(this._keyMap.getFocusedIndex(), this._keyMap.getFocusedElement());
             }
@@ -1260,7 +1262,7 @@ module Controls {
         }
 
         // Signals
-        /*protected*/ _handleFocusChanged(aElOld: HTMLElement, aElNew: HTMLElement) {
+        protected _handleFocusChanged(aElOld: HTMLElement, aElNew: HTMLElement) {
             this._emitFocusChanged(aElOld, aElNew);
         }
         connectFocusChanged(aHolder: any, aSlotName: string, aSlot: FFocusChanged) {
@@ -1428,11 +1430,11 @@ module Controls {
                 down: size.height - (aDrawnRect.bottom)
             };
 
-            // This case is (items draw Rect < drawnRect)
-            if (totalAvailable.right < 0 || totalAvailable.down < 0) {
-                // when simulation in Chrome, totalAvailable is invalid..(will be fixed?)
-                return;
-            }
+            //// This case is (items draw Rect < drawnRect)
+            //if (totalAvailable.right < 0 || totalAvailable.down < 0) {
+            //    // when simulation in Chrome, totalAvailable is invalid..(will be fixed?)
+            //    return;
+            //}
 
             var orientation = this._getDrawParam(KParamStrOrientation);
             if (orientation === TParamOrientation.EVertical) {
@@ -1520,7 +1522,14 @@ module Controls {
                     break;
 
                 case TParamScrollScheme.EByFixed:
+                    nextTop = scrollUnit;
+                    if (aUp && 0 < aTotalAvailable.up) {
+                        contentAvailable.up = scrollUnit;
+                    }
 
+                    if (aDown && 0 < aTotalAvailable.down) {
+                        contentAvailable.down = scrollUnit;
+                    }
                     break;
 
                 default:
@@ -1587,15 +1596,24 @@ module Controls {
 
                 case TParamScrollScheme.EByFixed:
 
-                    if (aLeft) {
-                        nextLeft = scrollUnit;
-                        contentAvailable.left = Math.min(aTotalAvailable.left, nextLeft);
+                    nextLeft = scrollUnit;
+                    if (aLeft && 0 < aTotalAvailable.left) {
+                        contentAvailable.left = scrollUnit;
                     }
 
-                    if (aRight) {
-                        nextLeft = scrollUnit;
-                        contentAvailable.right = Math.min(aTotalAvailable.right, nextLeft);
+                    if (aRight && 0 < aTotalAvailable.right) {
+                        contentAvailable.right = scrollUnit;
                     }
+
+                    //if (aLeft) {
+                    //    nextLeft = scrollUnit;
+                    //    contentAvailable.left = Math.min(aTotalAvailable.left, nextLeft);
+                    //}
+                    //
+                    //if (aRight) {
+                    //    nextLeft = scrollUnit;
+                    //    contentAvailable.right = Math.min(aTotalAvailable.right, nextLeft);
+                    //}
 
                     break;
 
@@ -1784,14 +1802,14 @@ module Controls {
             this._doInsertItems(aKey, aItem);
             this.emit("ItemInserted", aKey, aItem);
         }
-        /*protected*/ _doInsertItems(aKey: any, aItem: any[]): void {
+        protected _doInsertItems(aKey: any, aItem: any[]): void {
 
         }
         removeItems(aKeys: any[]) {
             this._doRemoveItems(aKeys);
             this.emit("ItemRemoved", aKeys);
         }
-        /*protected*/ _doRemoveItems(aKeys: any[]): void {
+        protected _doRemoveItems(aKeys: any[]): void {
 
         }
         updateItems(aKeys: any[], aItems?: any[]) {
@@ -1799,7 +1817,7 @@ module Controls {
             this.emit("ItemUpdated", aKeys, aItems);
         }
         //_doUpdateItems: (aKey: any[], aItem: any[]) => boolean;
-        /*protected*/ _doUpdateItems(aKey: number[], aItem: any[]): boolean {
+        protected _doUpdateItems(aKey: number[], aItem: any[]): boolean {
             return false;
         }
         connectItemInserted(aHolder: any, aSlotName: string, aHandler: { (aKey: any, aItems: any[]): void; }) {
@@ -1936,18 +1954,17 @@ module Controls {
             }
         }
 
-        /*protected*/ doItemChagned(aKeys: any[]): void {
+        protected doItemChagned(aKeys: any[]): void {
 
         }
 
-        /*protected*/ doItemInserted(aKey: any, aItems: any[], aNeedFocus?: boolean): void {
-
-        }
-        //doItemRemoved: (aKeys: any[]) => void;
-        /*protected*/ doItemRemoved(aKey: number, aUnsetFocus?: boolean): void {
+        protected doItemInserted(aKey: any, aItems: any[], aNeedFocus?: boolean): void {
 
         }
 
+        protected doItemRemoved(aKey: number, aUnsetFocus?: boolean): void {
+
+        }
 
         setRedrawAfterOperation (aRedraw: boolean) {
             this._redrawAfterOperation = aRedraw;
@@ -2058,7 +2075,7 @@ module Controls {
             this._prevDrawnElements = aDrawnElements;
         }
 
-        /*protected*/ _handleFocusChanged(aElOld: HTMLElement, aElNew: HTMLElement) {
+        protected _handleFocusChanged(aElOld: HTMLElement, aElNew: HTMLElement) {
             super._handleFocusChanged(aElOld, aElNew);
             var keyNew = this._drawnElements.getKey(aElNew);
             var keyOld = this._drawnElements.getKey(aElOld);
@@ -2072,7 +2089,7 @@ module Controls {
         /*
          Signals
          */
-        /*protected*/ _doKeyEnterLatent() {
+        protected _doKeyEnterLatent() {
             super._doKeyEnterLatent();
             var focusedInfo = this.getFocusedItemInfo();
             this._emitDataItemSelected(focusedInfo.key, focusedInfo.item, focusedInfo.el);
@@ -2103,13 +2120,13 @@ module Controls {
             this._element.classList.add("-list");
             this.registerSignal(["ItemInserted", "ItemRemoved"]);
         }
-        /*protected*/ doItemInserted(aKey: any, aItems: any[], aNeedFocus?: boolean) {
+        protected doItemInserted(aKey: any, aItems: any[], aNeedFocus?: boolean) {
             this.emit.call(this, "ItemInserted", this._drawnElements, aNeedFocus);
         }
-        /*protected*/ doItemRemoved(aKey: number, aUnsetFocus?: boolean) {
+        protected doItemRemoved(aKey: number, aUnsetFocus?: boolean) {
             this.emit.call(this, "ItemRemoved", this._drawnElements, aUnsetFocus);
         }
-        /*protected*/ doItemChagned(aKeys: number[]) {
+        protected doItemChanged(aKeys: number[]) {
             var i, len, key, drawnEl;
             for (i = 0, len = aKeys.length; i < len; i++) {
                 key = aKeys[i];
@@ -3102,6 +3119,7 @@ module Controls {
         }
 
         setScrollScheme(aScheme: TParamScrollScheme, aFixedScrollUnit?: number) {
+            aFixedScrollUnit = aFixedScrollUnit || this.getItemHeight() || this.getItemWidth();
             super.setScrollScheme(aScheme, aFixedScrollUnit);
             this._targetChild.setScrollScheme(aScheme, aFixedScrollUnit);
         }
@@ -3308,9 +3326,11 @@ module Controls {
             return this._listDataControl.getDataRolling();
         }
         setItemHeight(aItemHeight: number) {
+            super.setItemHeight(aItemHeight);
             this._listDataControl.setItemHeight(aItemHeight);
         }
         setItemWidth(aItemWidth: number) {
+            super.setItemWidth(aItemWidth);
             this._listDataControl.setItemWidth(aItemWidth);
         }
         setOrientation(aLayout: TParamOrientation) {
@@ -3493,7 +3513,7 @@ module Controls {
         }
 
         // set drawer
-        setDataDrawer(aDrawer: FDrawingDataDrawer) {
+        setDataDrawer(aDrawer: FDataDrawer) {
             this._drawingDataControl.setDataDrawer(aDrawer);
         }
 
@@ -3682,7 +3702,7 @@ module Controls {
                 prevChild = null;
                 prevElLayer = null;
                 prevCreateParam = null;
-            }
+            };
 
             this._child = [];
             if (this._keyMap) {
@@ -3785,7 +3805,7 @@ module Controls {
     export interface TViewItem {
         index: number;
         data: any;
-    };
+    }
 
     export class CViewItemResult {
         items: TViewItem[] = [];

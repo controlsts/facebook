@@ -1,0 +1,17 @@
+body * {
+  box-sizing: border-box;
+}
+body .-group.-view {
+  width: 560px;
+  height: 400px;
+}
+body .-group.-view .-list-item {
+  width: 560px;
+  height: 140px;
+  font-size: 20px;
+  color: black;
+  opacity: .5;
+}
+body .-group.-view .-list-item.-afd-leaf {
+  opacity: 1;
+}

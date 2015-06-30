@@ -1,4 +1,6 @@
 
+/// <reference path="bower_components/controls.ts/controls.ts"/>
+
 declare var FB: any;
 
 module gApp {
@@ -109,15 +111,93 @@ module gApp {
         }
     }
 
+    interface TPagingItem {
+        data: any[];
+        paging: {
+            cursors: {
+                after: string;
+                before: string;
+            };
+            next: string;
+        };
+    }
 
+    interface TPhotoItem {
+        comments: TPagingItem;
+        created_time: string;
+        from: {
+            category: string;
+            id: string;
+            name: string;
+        };
+        height: number;
+        icon: string;
+        id: string;
+        images: {
+            width: number;
+            height: number;
+            source: string;
+        }[];
+        likes: TPagingItem;
+        link: string;
+        picture: string;
+        source: string;
+        tags: TPagingItem;
+        updated_time: string;
+        width: number;
+    }
+
+    var list: Controls.CListControl;
+    var root = new Controls.CLayoutGroupControl(document.body);
     export function start() {
+        list = new Controls.CListControl(null);
+        list.setListData([]);
+        list.setItemHeight(140);
+        list.setAnimation(true);
+        list.setScrollScheme(Controls.TParamScrollScheme.EByFixed);
+        list.setDataDrawer(function (aKey:any, aItem:TPhotoItem, aEl:HTMLElement) {
+            var html = '<img src="' + aItem.picture + '">';
+            //aItem.images.forEach(function(img) {
+            //    html += '<img src="' + img.source + '">';
+            //});
+            aEl.innerHTML = html;
+
+            return Controls.TFocusInfo.KFocusAble;
+        });
+
+        root.setOrientation(Controls.TParamOrientation.EHorizontal);
+        root.setOwnedChildControls([list]);
+        root.draw();
+        root.setActiveFocus();
+
+        document.body.addEventListener('keydown', function (e) {
+            var keyStr = e['keyIdentifier'];
+            var handled = root.doKey(keyStr);
+            console.log(handled);
+
+            var skip = {
+                'Up': true,
+                'Down': true,
+                'Left': true,
+                'Right': true
+            };
+
+            if (skip[keyStr]) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        });
+    }
+
+    start();
+
+    export function fbReady() {
 
         var cocacola = new CFbUtils('cocacola');
-        cocacola.get(null, (err, result) => {
-        });
         cocacola.photos((err, result) => {
-
+            list.setListData(result.data);
+            root.draw();
+            root.setActiveFocus();
         });
-
     }
 }
